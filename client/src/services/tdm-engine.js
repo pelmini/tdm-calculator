@@ -7,12 +7,19 @@ class Engine {
     for (let rule of rulesArray) {
       rulesDictionary[rule.code] = rule;
     }
+    // Sets the rules to the initialRules object with "code" 
+    //  as the key, and rule object as the value.
+    // Rules come from CalculationRule table
     this.initialRules = rulesDictionary;
-    this.ruleCode = null;
-    this.rules = {};
+    this.ruleCode = null; // ???
+    // populated with this.initial rules when engine.run is invoked
+    // this.rules is mutated during calculations
+    this.rules = {}; 
   }
 
   run(formInputs, ruleCodes) {
+    // formInputs are the user inputs
+    // ruleCodes are the calculations that need results (metric targets)
     for (let i = 0; i < ruleCodes.length; i++) {
       if (!this.initialRules[ruleCodes[i]]) {
         throw new Error("Rule " + ruleCodes[i] + " not found!");
@@ -22,7 +29,7 @@ class Engine {
     // Make a deep copy of initialRules, since the rules
     // will be mutated as the calculation proceeds.
     // Every time the calculation is run, it re-computes
-    // everything frpom scratch for the requested ruleCodes.
+    // everything from scratch for the requested ruleCodes.
     this.rules = JSON.parse(JSON.stringify(this.initialRules));
     // Merge Form Input values with other independent variables
     // in the calculation.
@@ -60,8 +67,9 @@ class Engine {
     if (rule.category === "calculation" && rule.functionBody) {
       //console.log("exeucteCalc: " + code);
 
-      // Extract rules that this one depends upon
+      // Extract << rule >> that this one depends upon
       // from functionBody tokens
+      // 
       const regExPattern = /<<[\w\-]+?>>/gi;
       const tokens = rule.functionBody
         .match(regExPattern)
@@ -94,14 +102,14 @@ class Engine {
 
         functionBody = functionBody.replace("<<" + token + ">>", code);
       }
-      //console.log("functionBody: " + functionBody);
+      // console.log("functionBody: " + functionBody);
       try {
         rule.value = this.buildFunction(functionBody).call(this);
       } catch (error) {
         console.log("Failed to build function for " + rule.code + functionBody);
       }
     }
-    console.log(code + " = " + rule.value);
+    // console.log(code + " = " + rule.value);
     return rule.value;
   }
 
@@ -118,15 +126,23 @@ class Engine {
   }
 
   showWork(ruleCode) {
-    console.log("Show work for " + ruleCode);
-    const workTree = { code: ruleCode, ...this.rules[ruleCode] };
+    const workTree = { code: ruleCode
+      , ...this.rules[ruleCode] 
+    };
     this.addDependencies(workTree);
-    return workTree;
+    const filterWork = (obj) => {
+      for (let key in obj) {
+        if (!obj[key] || (typeof obj[key] === "string" && parseInt(obj[key]) <= 0)) {
+          delete obj[key]
+        }
+      }
+      return obj
+    }
+    return filterWork(workTree.code);
   }
 
   addDependencies(currentRule) {
     const dependencyRuleCodes = this.getDependencies(currentRule);
-
     currentRule.dependencies = dependencyRuleCodes
       .map(code => ({
         code,

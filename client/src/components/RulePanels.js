@@ -18,8 +18,9 @@ const RulePanels = props => {
   return (
     <React.Fragment>
       {panelsRules && panelsRules.length > 0
-        ? panelsRules.map(rules => (
+        ? panelsRules.map((rules, i) => (
             <div
+            key={i}
               style={{
                 border: "2px solid lightgray",
                 borderRadius: "0.5em",

@@ -6,7 +6,7 @@ import Engine from "../services/tdm-engine";
 
 class TdmCalculationContainer extends React.Component {
   calculationId = 1;
-  engine = null;
+  engine = null; //instance created on componentDidMount
 
   // These are the calculation results we want to calculate
   // and display on the main page.
@@ -23,17 +23,23 @@ class TdmCalculationContainer extends React.Component {
 
   state = {
     rules: [],
-    formInputs: {}
+    formInputs: {},
+    work: {}
   };
 
   componentDidMount() {
     ruleService.getByCalculationId(this.calculationId).then(response => {
-      console.log(response.data);
-      this.engine = new Engine(response.data);
+      // console.log(response.data);
+      //creates instance of Engine with all inputs and calculations 
+      //from the CalculationRule table.
+      //currently set to calculationId = 1, represents LA rule set.
+      this.engine = new Engine(response.data); 
       this.engine.run(this.state.formInputs, this.resultRuleCodes);
       this.setState({
         rules: this.engine.showRulesArray()
       });
+      
+
     });
   }
 
@@ -61,7 +67,13 @@ class TdmCalculationContainer extends React.Component {
     this.engine.run(formInputs, this.resultRuleCodes);
     const rules = this.engine.showRulesArray();
     // update state with modified formInputs and rules
-    this.setState({ formInputs, rules });
+    this.setState({ formInputs, rules }, ()=> {
+      const work = this.engine.showWork(this.state.formInputs)
+      this.setState({work}, () => {
+        console.log('stateeeeeeee', this.state)
+      })
+    });
+    
   };
 
   render() {
